@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Apple Auth Relay</title>
+</head>
+<body>
+    <p>正在返回应用，请稍候...</p>
+    <script>
+        /**
+         * Apple 在 response_mode=fragment 模式下，会将结果放在 URL 的 # 后面
+         * 例如: https://yourdomain.com/relay#id_token=...&state=...
+         */
+        (function() {
+            const fragment = window.location.hash; // 获取 # 及后面的内容
+            if (fragment) {
+                // 将参数透传给 App 的自定义协议
+                // 结果会变成: cdnapp://auth-callback#id_token=...
+                window.location.href = "cdnapp://auth-callback" + fragment;
+                
+                // 1秒后尝试自动关闭窗口（在 Custom Tabs 中可能不起作用，但这是一个好习惯）
+                setTimeout(function() {
+                    window.close();
+                }, 1000);
+            } else {
+                document.body.innerHTML = "未检测到授权信息，请重试。";
+            }
+        })();
+    </script>
+</body>
+</html>
