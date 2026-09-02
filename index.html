@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CDN 登录与支付模拟测试</title>
+    <title>CDN 登录与支付模拟测试 (环境感知)</title>
     <style>
         body {
             font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -22,6 +22,15 @@
             max-width: 400px;
         }
         h1 { font-size: 1.5rem; color: #333; margin-bottom: 1.5rem; text-align: center; }
+        .form-group { margin-bottom: 20px; width: 100%; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
         button {
             width: 100%;
             padding: 12px;
@@ -47,6 +56,15 @@
     <div class="container">
         <h1>模拟回调测试</h1>
 
+        <div class="form-group">
+            <label for="envSelect">选择目标环境:</label>
+            <select id="envSelect">
+                <option value="cdnapp-dev">开发环境 (Dev)</option>
+                <option value="cdnapp-uat">测试环境 (Uat)</option>
+                <option value="cdnapp">生产环境 (Prod)</option>
+            </select>
+        </div>
+
         <button class="btn-apple" onclick="simulateAppleLogin()">模拟 Apple 登录返回</button>
         <button class="btn-google" onclick="simulatePayment()">模拟 Google 支付成功</button>
 
@@ -58,24 +76,34 @@
             document.getElementById('status').innerText = msg;
         }
 
+        function getSelectedScheme() {
+            return document.getElementById('envSelect').value;
+        }
+
         function simulateAppleLogin() {
-            log("正在模拟 Apple 登录返回...");
+            const scheme = getSelectedScheme();
+            log(`正在模拟 Apple 登录返回 (${scheme})...`);
             // 模拟 Apple 的 fragment 模式返回
             const testFragment = "#id_token=mock_apple_token_12345&state=test_state";
-            window.location.href = "cdnapp://auth-callback" + testFragment;
+            window.location.href = scheme + "://auth-callback" + testFragment;
         }
 
         function simulatePayment() {
-            log("正在模拟 Google 支付回调...");
-            window.location.href = "cdnapp://payment-callback";
+            const scheme = getSelectedScheme();
+            log(`正在模拟 Google 支付回调 (${scheme})...`);
+            window.location.href = scheme + "://payment-callback";
         }
 
-        // 保留原有的自动转发逻辑，以兼容真实的 Apple 重定向
+        // 环境感知的自动转发逻辑
         (function() {
             const fragment = window.location.hash;
+            const urlParams = new URLSearchParams(window.location.search);
+            const forcedScheme = urlParams.get('webScheme');
+
             if (fragment && fragment.includes('id_token')) {
-                log("检测到真实 Apple 回调，正在自动跳转...");
-                window.location.href = "cdnapp://auth-callback" + fragment;
+                const scheme = forcedScheme || getSelectedScheme();
+                log(`检测到真实 Apple 回调，跳转至 ${scheme}...`);
+                window.location.href = scheme + "://auth-callback" + fragment;
             }
         })();
     </script>
