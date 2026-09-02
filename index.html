@@ -1,29 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Apple Auth Relay</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDN 登录与支付模拟测试</title>
+    <style>
+        body {
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f7f9;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 { font-size: 1.5rem; color: #333; margin-bottom: 1.5rem; text-align: center; }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-apple { background-color: #000; color: white; }
+        .btn-google { background-color: #28a745; color: white; }
+        .log {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-    <p>正在返回应用，请稍候...</p>
+    <div class="container">
+        <h1>模拟回调测试</h1>
+
+        <button class="btn-apple" onclick="simulateAppleLogin()">模拟 Apple 登录返回</button>
+        <button class="btn-google" onclick="simulatePayment()">模拟 Google 支付成功</button>
+
+        <div class="log" id="status">等待操作...</div>
+    </div>
+
     <script>
-        /**
-         * Apple 在 response_mode=fragment 模式下，会将结果放在 URL 的 # 后面
-         * 例如: https://yourdomain.com/relay#id_token=...&state=...
-         */
+        function log(msg) {
+            document.getElementById('status').innerText = msg;
+        }
+
+        function simulateAppleLogin() {
+            log("正在模拟 Apple 登录返回...");
+            // 模拟 Apple 的 fragment 模式返回
+            const testFragment = "#id_token=mock_apple_token_12345&state=test_state";
+            window.location.href = "cdnapp://auth-callback" + testFragment;
+        }
+
+        function simulatePayment() {
+            log("正在模拟 Google 支付回调...");
+            window.location.href = "cdnapp://payment-callback";
+        }
+
+        // 保留原有的自动转发逻辑，以兼容真实的 Apple 重定向
         (function() {
-            const fragment = window.location.hash; // 获取 # 及后面的内容
-            if (fragment) {
-                // 将参数透传给 App 的自定义协议
-                // 结果会变成: cdnapp://auth-callback#id_token=...
+            const fragment = window.location.hash;
+            if (fragment && fragment.includes('id_token')) {
+                log("检测到真实 Apple 回调，正在自动跳转...");
                 window.location.href = "cdnapp://auth-callback" + fragment;
-                
-                // 1秒后尝试自动关闭窗口（在 Custom Tabs 中可能不起作用，但这是一个好习惯）
-                setTimeout(function() {
-                    window.close();
-                }, 1000);
-            } else {
-                document.body.innerHTML = "未检测到授权信息，请重试。";
             }
         })();
     </script>
